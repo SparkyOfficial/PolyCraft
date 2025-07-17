@@ -7,8 +7,12 @@ import com.polycraft.engine.data.ScriptDataManager;
 import com.polycraft.engine.listeners.EventManager;
 import com.polycraft.engine.scripting.ScriptManager;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitScheduler;
+
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Engine;
+import org.graalvm.polyglot.HostAccess;
+
 
 import java.util.logging.Level;
 
@@ -95,21 +99,38 @@ public final class PolyCraftEngine extends JavaPlugin {
     
     private void initializeGraalVM() {
         try {
-            // Create a shared GraalVM engine
+            // Enable all languages explicitly
+            System.setProperty("polyglot.engine.WarnInterpreterOnly", "false");
+            
+            // Create a shared GraalVM engine with explicit language options
             graalEngine = Engine.newBuilder()
+                    .useSystemProperties(true)
                     .option("engine.WarnInterpreterOnly", "false")
+                    .option("js.ecmascript-version", "2022")
+                    .option("js.nashorn-compat", "true")
+                    .option("js.commonjs-require", "true")
+                    .option("js.commonjs-require-cwd", getDataFolder().getAbsolutePath() + "/scripts")
                     .build();
             
-            // Create a new GraalVM context with all languages enabled
+            // Verify that languages are available
+            if (!graalEngine.getLanguages().containsKey("js")) {
+                throw new IllegalStateException("JavaScript language is not available. Check your GraalVM installation.");
+            }
+            
+            // Create a new GraalVM context with basic permissions
             polyglotContext = Context.newBuilder()
                     .engine(graalEngine)
                     .allowAllAccess(true)
+                    .allowHostAccess(HostAccess.ALL)
+                    .allowHostClassLookup(className -> true)
+                    .allowCreateThread(true)
                     .build();
             
-            getLogger().info("GraalVM Polyglot Engine initialized");
+            getLogger().info("GraalVM Polyglot Engine initialized with languages: " + graalEngine.getLanguages().keySet());
             
         } catch (Exception e) {
             getLogger().severe("Failed to initialize GraalVM: " + e.getMessage());
+            e.printStackTrace();
             throw new RuntimeException("GraalVM initialization failed", e);
         }
     }
