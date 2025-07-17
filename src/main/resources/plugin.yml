@@ -3,6 +3,9 @@ version: ${project.version}
 main: com.polycraft.engine.PolyCraftEngine
 authors: [PolyCraftTeam]
 api-version: '1.20'
+
+# Все зависимости включены в JAR через Maven Shade Plugin
+
 description: |
   PolyCraft Engine - A high-performance, multi-language scripting engine for Minecraft.
   Write game logic in JavaScript, Python, or Java and see changes in real-time.
@@ -11,7 +14,7 @@ commands:
   polycraft:
     description: Main command for PolyCraft Engine
     aliases: [pc]
-    usage: 
+    usage: |
       - /pc list - List all loaded scripts
       - /pc reload <script> - Reload a specific script
       - /pc reload-all - Reload all scripts
