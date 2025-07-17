@@ -1,0 +1,32 @@
+name: PolyCraft-Engine
+version: ${project.version}
+main: com.polycraft.engine.PolyCraftEngine
+authors: [PolyCraftTeam]
+api-version: '1.20'
+description: |
+  PolyCraft Engine - A high-performance, multi-language scripting engine for Minecraft.
+  Write game logic in JavaScript, Python, or Java and see changes in real-time.
+
+commands:
+  polycraft:
+    description: Main command for PolyCraft Engine
+    aliases: [pc]
+    usage: 
+      - /pc list - List all loaded scripts
+      - /pc reload <script> - Reload a specific script
+      - /pc reload-all - Reload all scripts
+      - /pc enable <script> - Enable a disabled script
+      - /pc disable <script> - Disable a script
+      - /pc status <script> - Show script status
+      - /pc eval <lang> <code> - Evaluate code in the specified language
+    permission: polycraft.command
+
+permissions:
+  polycraft.command:
+    description: Allows access to PolyCraft commands
+    default: op
+  polycraft.admin:
+    description: Full access to all PolyCraft features
+    default: op
+    children:
+      polycraft.command: true
