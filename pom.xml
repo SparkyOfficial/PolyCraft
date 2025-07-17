@@ -38,6 +38,10 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
+        <repository>
+            <id>graalvm-maven</id>
+            <url>https://maven.graalvm.org/artifactory/graalvm-upstream</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -54,25 +58,21 @@
             <groupId>org.graalvm.sdk</groupId>
             <artifactId>graal-sdk</artifactId>
             <version>${graalvm.version}</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.graalvm.truffle</groupId>
             <artifactId>truffle-api</artifactId>
             <version>${graalvm.version}</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.graalvm.js</groupId>
             <artifactId>js</artifactId>
             <version>${graalvm.version}</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.graalvm.js</groupId>
             <artifactId>js-scriptengine</artifactId>
             <version>${graalvm.version}</version>
-            <scope>compile</scope>
         </dependency>
 
         <!-- Utilities -->
@@ -123,6 +123,10 @@
                                     <shadedPattern>com.polycraft.engine.libs.graalvm</shadedPattern>
                                 </relocation>
                                 <relocation>
+                                    <pattern>com.oracle.truffle</pattern>
+                                    <shadedPattern>com.polycraft.engine.libs.truffle</shadedPattern>
+                                </relocation>
+                                <relocation>
                                     <pattern>com.google.gson</pattern>
                                     <shadedPattern>com.polycraft.engine.libs.gson</shadedPattern>
                                 </relocation>
@@ -133,6 +137,9 @@
                             </relocations>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/services/com.oracle.truffle.api.provider.TruffleLanguageProvider</resource>
+                                </transformer>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>com.polycraft.engine.PolyCraftEngine</mainClass>
                                 </transformer>
