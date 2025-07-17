@@ -118,6 +118,11 @@
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <relocations>
+                                <!-- 
+                                    УБИРАЕМ ПЕРЕМЕЩЕНИЕ ДЛЯ GRAALVM И TRUFFLE.
+                                    Они останутся со своими оригинальными именами пакетов.
+                                -->
+                                <!--
                                 <relocation>
                                     <pattern>org.graalvm</pattern>
                                     <shadedPattern>com.polycraft.engine.libs.graalvm</shadedPattern>
@@ -126,6 +131,9 @@
                                     <pattern>com.oracle.truffle</pattern>
                                     <shadedPattern>com.polycraft.engine.libs.truffle</shadedPattern>
                                 </relocation>
+                                -->
+                                
+                                <!-- Оставляем перемещение для других библиотек, чтобы избежать конфликтов с ними -->
                                 <relocation>
                                     <pattern>com.google.gson</pattern>
                                     <shadedPattern>com.polycraft.engine.libs.gson</shadedPattern>
