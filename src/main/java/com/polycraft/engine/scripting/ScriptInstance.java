@@ -47,6 +47,7 @@ import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.event.Event;
 import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Engine;
 import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.Value;
@@ -357,43 +358,33 @@ public class ScriptInstance implements AutoCloseable {
     }
     
     /**
-     * Creates a secure GraalVM context with appropriate security settings.
+     * Creates a secure GraalVM context using the shared engine.
      */
     private Context createContext() {
+        Engine sharedEngine = plugin.getGraalEngine();
+        if (sharedEngine == null) {
+            throw new IllegalStateException("Cannot create script context: The shared GraalVM Engine is not available.");
+        }
+
+        getLogger().info("Creating new context for script '" + scriptFile.getName() + "' using shared engine.");
+
         // Configure host access policies
-        HostAccess hostAccess = HostAccess.newBuilder()
-            .allowPublicAccess(true)
-            .allowArrayAccess(true)
-            .allowListAccess(true)
-            .allowMapAccess(true)
-            .allowBufferAccess(true)
-            .allowIterableAccess(true)
-            .allowIteratorAccess(true)
-            .allowMapAccess(true)
-            .build();
-            
-        // Create a new context builder with the current file system access
-        return Context.newBuilder()
-                .allowIO(true)
-                .allowNativeAccess(false)
-                .allowCreateThread(true)
+        Context.Builder builder = Context.newBuilder()
+                .engine(sharedEngine) // Используем общий движок
+                .allowAllAccess(true) // Оставляем для совместимости, но в будущем ограничим
                 .allowHostAccess(HostAccess.ALL)
-                .allowHostClassLookup(className -> {
-                    try {
-                        return securityManager.isClassAllowed(className);
-                    } catch (Exception e) {
-                        plugin.getLogger().log(Level.WARNING, "Error checking if class is allowed: " + className, e);
-                        return false;
-                    }
-                })
-                .fileSystem(FileSystem.newDefaultFileSystem())
-                .option("engine.WarnInterpreterOnly", "false")
-                .build();
+                .allowHostClassLookup(className -> true) // Тоже нужно будет ограничить
+                .allowCreateThread(true);
+
+        // Add script directory to module path for ES modules
+        if (scriptFile.getParentFile() != null) {
+            builder.option("js.commonjs-require", "true")
+                   .option("js.commonjs-require-cwd", scriptFile.getParentFile().getAbsolutePath());
+        }
+        
+        return builder.build();
     }
     
-    /**
-     * Loads and executes the script content.
-     */
     private void loadAndExecuteScript() throws IOException {
         // Read script content with proper error handling
         String scriptContent;

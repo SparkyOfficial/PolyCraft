@@ -27,8 +27,7 @@ public final class PolyCraftEngine extends JavaPlugin {
     private ScriptDataManager dataManager;
     private PolyAPI polyAPI;
     
-    // GraalVM components
-    private Context polyglotContext;
+    // GraalVM Engine - единственный экземпляр на весь плагин
     private Engine graalEngine;
     
     @Override
@@ -85,12 +84,12 @@ public final class PolyCraftEngine extends JavaPlugin {
             dataManager.saveAll();
         }
         
-        // Close GraalVM context
-        if (polyglotContext != null) {
+        // Close GraalVM engine
+        if (graalEngine != null) {
             try {
-                polyglotContext.close();
+                graalEngine.close();
             } catch (Exception e) {
-                getLogger().log(Level.SEVERE, "Error closing GraalVM context", e);
+                getLogger().log(Level.WARNING, "Error closing GraalVM engine", e);
             }
         }
         
@@ -98,40 +97,20 @@ public final class PolyCraftEngine extends JavaPlugin {
     }
     
     private void initializeGraalVM() {
+        getLogger().info("Attempting to initialize GraalVM Polyglot Engine...");
         try {
-            // Enable all languages explicitly
-            System.setProperty("polyglot.engine.WarnInterpreterOnly", "false");
-            
-            // Create a shared GraalVM engine with explicit language options
-            graalEngine = Engine.newBuilder()
-                    .useSystemProperties(true)
-                    .option("engine.WarnInterpreterOnly", "false")
-                    .option("js.ecmascript-version", "2022")
-                    .option("js.nashorn-compat", "true")
-                    .option("js.commonjs-require", "true")
-                    .option("js.commonjs-require-cwd", getDataFolder().getAbsolutePath() + "/scripts")
-                    .build();
-            
-            // Verify that languages are available
+            // Создаем ОДИН общий движок для всего плагина
+            this.graalEngine = Engine.create();
+            getLogger().info("GraalVM Polyglot Engine initialized successfully. Available languages: " + graalEngine.getLanguages().keySet());
+
             if (!graalEngine.getLanguages().containsKey("js")) {
-                throw new IllegalStateException("JavaScript language is not available. Check your GraalVM installation.");
+                 getLogger().severe("FATAL: JavaScript language is not available in GraalVM Engine. The plugin cannot function.");
+                 throw new IllegalStateException("JavaScript language not found.");
             }
-            
-            // Create a new GraalVM context with basic permissions
-            polyglotContext = Context.newBuilder()
-                    .engine(graalEngine)
-                    .allowAllAccess(true)
-                    .allowHostAccess(HostAccess.ALL)
-                    .allowHostClassLookup(className -> true)
-                    .allowCreateThread(true)
-                    .build();
-            
-            getLogger().info("GraalVM Polyglot Engine initialized with languages: " + graalEngine.getLanguages().keySet());
-            
+
         } catch (Exception e) {
-            getLogger().severe("Failed to initialize GraalVM: " + e.getMessage());
-            e.printStackTrace();
-            throw new RuntimeException("GraalVM initialization failed", e);
+            getLogger().log(Level.SEVERE, "FATAL: Failed to initialize GraalVM Engine.", e);
+            this.graalEngine = null; // Убедимся, что движок null, если была ошибка
         }
     }
     
@@ -184,18 +163,10 @@ public final class PolyCraftEngine extends JavaPlugin {
     }
     
     /**
-     * Gets the GraalVM engine instance.
-     * @return The GraalVM engine
+     * Gets the shared GraalVM engine instance.
+     * @return The GraalVM engine, or null if not initialized
      */
     public Engine getGraalEngine() {
         return graalEngine;
-    }
-    
-    /**
-     * Gets the Polyglot context.
-     * @return The Polyglot context
-     */
-    public Context getPolyglotContext() {
-        return polyglotContext;
     }
 }

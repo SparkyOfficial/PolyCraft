@@ -10,16 +10,17 @@
     <packaging>jar</packaging>
 
     <name>PolyCraft-Engine</name>
-    <description>High-performance scripting engine for Minecraft with multi-language support</description>
 
     <properties>
         <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <paper.version>1.20.4-R0.1-SNAPSHOT</paper.version>
-        <graalvm.version>21.3.0</graalvm.version>
+        <!-- ИСПОЛЬЗУЕМ АКТУАЛЬНУЮ ВЕРСИЮ GRAALVM -->
+        <graalvm.version>24.0.0</graalvm.version>
     </properties>
 
     <repositories>
+        <!-- ВСЕ НУЖНЫЕ БИБЛИОТЕКИ ЕСТЬ В ЭТИХ ДВУХ РЕПОЗИТОРИЯХ -->
         <repository>
             <id>papermc-repo</id>
             <url>https://repo.papermc.io/repository/maven-public/</url>
@@ -28,24 +29,9 @@
             <id>sonatype</id>
             <url>https://oss.sonatype.org/content/groups/public/</url>
         </repository>
-        <repository>
-            <id>graalvm-releases</id>
-            <url>https://maven.graalvm.org/artifactory/graalvm-ce-releases</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>graalvm-maven</id>
-            <url>https://maven.graalvm.org/artifactory/graalvm-upstream</url>
-        </repository>
     </repositories>
 
     <dependencies>
-        <!-- Paper API -->
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
@@ -53,7 +39,7 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- GraalVM Dependencies -->
+        <!-- ПРАВИЛЬНЫЕ ЗАВИСИМОСТИ GRAALVM ДЛЯ ВЕРСИИ 24.x -->
         <dependency>
             <groupId>org.graalvm.sdk</groupId>
             <artifactId>graal-sdk</artifactId>
@@ -64,9 +50,10 @@
             <artifactId>truffle-api</artifactId>
             <version>${graalvm.version}</version>
         </dependency>
+        <!-- ВОТ ИСПРАВЛЕНИЕ: artifactId теперь 'js-language' -->
         <dependency>
             <groupId>org.graalvm.js</groupId>
-            <artifactId>js</artifactId>
+            <artifactId>js-language</artifactId>
             <version>${graalvm.version}</version>
         </dependency>
         <dependency>
@@ -75,7 +62,7 @@
             <version>${graalvm.version}</version>
         </dependency>
 
-        <!-- Utilities -->
+        <!-- Остальные зависимости -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -90,11 +77,12 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>31.1-jre</version>
+            <version>32.1.2-jre</version>
         </dependency>
     </dependencies>
 
     <build>
+        <defaultGoal>clean package</defaultGoal>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -117,41 +105,6 @@
                         </goals>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
-                            <relocations>
-                                <!-- 
-                                    УБИРАЕМ ПЕРЕМЕЩЕНИЕ ДЛЯ GRAALVM И TRUFFLE.
-                                    Они останутся со своими оригинальными именами пакетов.
-                                -->
-                                <!--
-                                <relocation>
-                                    <pattern>org.graalvm</pattern>
-                                    <shadedPattern>com.polycraft.engine.libs.graalvm</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>com.oracle.truffle</pattern>
-                                    <shadedPattern>com.polycraft.engine.libs.truffle</shadedPattern>
-                                </relocation>
-                                -->
-                                
-                                <!-- Оставляем перемещение для других библиотек, чтобы избежать конфликтов с ними -->
-                                <relocation>
-                                    <pattern>com.google.gson</pattern>
-                                    <shadedPattern>com.polycraft.engine.libs.gson</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>com.google.common</pattern>
-                                    <shadedPattern>com.polycraft.engine.libs.guava</shadedPattern>
-                                </relocation>
-                            </relocations>
-                            <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                                    <resource>META-INF/services/com.oracle.truffle.api.provider.TruffleLanguageProvider</resource>
-                                </transformer>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.polycraft.engine.PolyCraftEngine</mainClass>
-                                </transformer>
-                            </transformers>
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>
@@ -159,37 +112,25 @@
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.DSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
-                                        <exclude>META-INF/maven/**</exclude>
-                                        <exclude>META-INF/versions/**</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
+                            <transformers>
+                                <!-- ЭТО КЛЮЧЕВОЙ МОМЕНТ ДЛЯ ПРАВИЛЬНОЙ РАБОТЫ GRAALVM -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.2.2</version>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <addClasspath>true</addClasspath>
-                            <mainClass>com.polycraft.engine.PolyCraftEngine</mainClass>
-                        </manifest>
-                    </archive>
-                </configuration>
             </plugin>
         </plugins>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
-                <includes>
-                    <include>plugin.yml</include>
-                </includes>
             </resource>
         </resources>
     </build>
 </project>
+
+    
