@@ -11,6 +11,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.graalvm.polyglot.io.FileSystem;
 import org.graalvm.polyglot.io.ProcessHandler;
 import org.graalvm.polyglot.io.MessageTransport;
+import org.bukkit.command.CommandSender;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -36,12 +37,16 @@ public class ScriptManager {
     
     private final ScriptScheduler scriptScheduler;
     
+    // Evaluator for code snippets
+    private final ScriptEvaluator evaluator;
+    
     public ScriptManager(PolyCraftEngine plugin) {
         this.plugin = plugin;
         this.scriptLoader = new ScriptLoader(plugin);
         this.scriptsFolder = new File(plugin.getDataFolder(), "scripts");
         this.configFile = new File(plugin.getDataFolder(), "scripts.yml");
         this.scriptScheduler = new ScriptScheduler(plugin);
+        this.evaluator = new ScriptEvaluator(plugin);
         
         // Create scripts folder if it doesn't exist
         if (!scriptsFolder.exists()) {
@@ -453,22 +458,30 @@ public class ScriptManager {
         // Stop watching for file changes
         stopWatching();
         
-        // Disable all scripts
+        // Unload all scripts
         for (ScriptInstance script : loadedScripts.values()) {
             try {
                 script.disable();
             } catch (Exception e) {
-                plugin.getLogger().log(Level.SEVERE, "Error disabling script: " + script.getScriptFile().getName(), e);
+                plugin.getLogger().log(Level.SEVERE, "Error unloading script: " + script.getScriptFile().getName(), e);
             }
         }
-        
-        // Clear the loaded scripts
         loadedScripts.clear();
         
-        // Shutdown the script scheduler
-        if (scriptScheduler != null) {
-            scriptScheduler.cancelAllTasks();
-        }
+        // Shutdown scheduler
+        scriptScheduler.cancelAllTasks();
     }
-
+    
+    /**
+     * Evaluates a code snippet in the specified language with proper context.
+     * @param language The language of the code (e.g., "js", "python")
+     * @param code The code to evaluate
+     * @param sender The command sender (can be null)
+     * @return The result of the evaluation
+     * @throws Exception if evaluation fails
+     */
+    public Object evaluateCode(String language, String code, CommandSender sender) throws Exception {
+        // Delegate to the evaluator
+        return evaluator.evaluateCode(language, code, sender);
+    }
 }

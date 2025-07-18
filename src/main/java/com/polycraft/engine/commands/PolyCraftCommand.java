@@ -201,6 +201,12 @@ public class PolyCraftCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         
+        // For security, only allow console and OPs to use eval
+        if (sender instanceof org.bukkit.entity.Player && !sender.isOp()) {
+            sender.sendMessage(ChatColor.RED + "You don't have permission to use this command.");
+            return true;
+        }
+        
         String language = args[0].toLowerCase();
         String code = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
         
@@ -214,9 +220,6 @@ public class PolyCraftCommand implements CommandExecutor, TabCompleter {
             case "python":
                 language = "python";
                 break;
-            case "java":
-                language = "java";
-                break;
             case "cs":
             case "csharp":
                 language = "csharp";
@@ -227,15 +230,35 @@ public class PolyCraftCommand implements CommandExecutor, TabCompleter {
         }
         
         try {
-            // For security, only allow console and OPs to use eval
-            if (!(sender instanceof Player) || sender.isOp()) {
-                Object result = plugin.getScriptManager().evaluateCode(language, code);
-                sender.sendMessage(ChatColor.GREEN + "Result: " + ChatColor.WHITE + result);
-            } else {
-                sender.sendMessage(ChatColor.RED + "You don't have permission to use this command.");
+            // Call the new evaluateCode method with the sender
+            Object result = plugin.getScriptManager().evaluateCode(language, code, sender);
+            
+            // Convert the result to a string for display
+            String resultString = "null";
+            if (result != null) {
+                if (result instanceof org.graalvm.polyglot.Value) {
+                    org.graalvm.polyglot.Value val = (org.graalvm.polyglot.Value) result;
+                    if (val.isHostObject()) {
+                        resultString = String.valueOf(val.asHostObject());
+                    } else if (!val.isNull()) {
+                        resultString = val.toString();
+                    }
+                } else {
+                    resultString = result.toString();
+                }
             }
+            
+            sender.sendMessage(ChatColor.GREEN + "Result: " + ChatColor.WHITE + resultString);
         } catch (Exception e) {
-            sender.sendMessage(ChatColor.RED + "Error: " + e.getMessage());
+            // Provide a more detailed error message
+            String errorMsg = e.getMessage();
+            if (errorMsg == null || errorMsg.isEmpty()) {
+                errorMsg = e.getClass().getSimpleName();
+            }
+            sender.sendMessage(ChatColor.RED + "Error: " + errorMsg);
+            
+            // Log the full exception to console for debugging
+            plugin.getLogger().log(java.util.logging.Level.WARNING, "Error evaluating code", e);
         }
         
         return true;
