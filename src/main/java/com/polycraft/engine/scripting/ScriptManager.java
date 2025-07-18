@@ -112,28 +112,7 @@ public class ScriptManager {
         return successCount;
     }
     
-    /**
-     * Evaluates a code snippet in the specified language.
-     * @param language The language of the code
-     * @param code The code to evaluate
-     * @return The result of the evaluation, or null if an error occurred
-     */
-    public Object evaluateCode(String language, String code) {
-        if (language == null || code == null || code.trim().isEmpty()) {
-            return null;
-        }
-        
-        try (org.graalvm.polyglot.Context context = org.graalvm.polyglot.Context.newBuilder()
-                .allowAllAccess(false)
-                .allowIO(true)  // Allow IO but with default restrictions
-                .build()) {
-            return context.eval(language, code);
-        } catch (Exception e) {
-            plugin.getLogger().log(Level.SEVERE, "Error evaluating code", e);
-            return null;
-        }
-    }
-    
+
     private void loadScriptConfig() {
         scriptConfig = YamlConfiguration.loadConfiguration(configFile);
     }
@@ -208,19 +187,14 @@ public class ScriptManager {
         }
         
         try {
-            // Create required components
-            EventManager eventManager = new EventManager(plugin);
-            ScriptConfig config = new ScriptConfig(plugin);
-            ScriptDataManager dataManager = new ScriptDataManager(plugin);
-            
-            // Create script instance with all required dependencies
+            // Use existing managers from the plugin instance
             ScriptInstance script = new ScriptInstance(
                 plugin, 
                 scriptFile, 
                 scriptScheduler,
-                eventManager,
-                config,
-                dataManager
+                plugin.getEventManager(),
+                plugin.getScriptConfig(),
+                plugin.getDataManager()
             );
             
             // Configure the script
@@ -454,21 +428,34 @@ public class ScriptManager {
     /**
      * Shuts down the script manager and all loaded scripts.
      */
+    /**
+     * Shuts down the script manager and all loaded scripts.
+     * This will disable all scripts and clean up resources.
+     */
     public void shutdown() {
-        // Stop watching for file changes
+        // Stop watching for file changes first to prevent race conditions
         stopWatching();
         
-        // Unload all scripts
-        for (ScriptInstance script : loadedScripts.values()) {
+        // Create a copy of the scripts to avoid concurrent modification
+        List<ScriptInstance> scripts = new ArrayList<>(loadedScripts.values());
+        
+        // Disable all scripts
+        for (ScriptInstance script : scripts) {
             try {
+                // Each script's disable() method will handle its own cleanup
                 script.disable();
             } catch (Exception e) {
-                plugin.getLogger().log(Level.SEVERE, "Error unloading script: " + script.getScriptFile().getName(), e);
+                plugin.getLogger().log(Level.SEVERE, 
+                    "Error unloading script: " + script.getScriptFile().getName(), 
+                    e);
             }
         }
+        
+        // Clear the scripts map
         loadedScripts.clear();
         
-        // Shutdown scheduler
+        // Cancel any remaining tasks in the scheduler
+        // Note: This is a no-op if scripts properly cleaned up their tasks
         scriptScheduler.cancelAllTasks();
     }
     

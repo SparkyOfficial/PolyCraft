@@ -3,9 +3,12 @@ package com.polycraft.engine.scripting;
 import com.polycraft.engine.PolyCraftEngine;
 import org.bukkit.command.CommandSender;
 import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Engine;
+import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.Value;
 import org.graalvm.polyglot.io.FileSystem;
+import org.graalvm.polyglot.io.IOAccess;
 
 import java.io.StringReader;
 import java.util.List;
@@ -50,48 +53,60 @@ public class ScriptEvaluator {
     }
     
     private Context createContext(String language, CommandSender sender) {
-        // Create context builder with appropriate settings
-        Context context = null;
+        // 1. Get the shared engine from the main class, same as for scripts
+        Engine sharedEngine = plugin.getGraalEngine();
+        if (sharedEngine == null) {
+            throw new IllegalStateException("Cannot create eval context: Shared GraalVM Engine is not available.");
+        }
+        
         try {
-            context = Context.newBuilder()
-                .allowIO(true)
+            // 2. Create a context builder with common options
+            Context.Builder builder = Context.newBuilder(language)
+                .engine(sharedEngine)
                 .allowAllAccess(true)
-                .fileSystem(FileSystem.newDefaultFileSystem())
-                .build();
-                
-            // Set up the global 'poly' object
-            Value poly = context.eval(language, "({})");
+                .allowHostAccess(HostAccess.ALL)
+                .allowIO(IOAccess.ALL)
+                .allowCreateThread(true)
+                .allowNativeAccess(true)
+                .allowCreateProcess(true)
+                .allowHostClassLoading(true)
+                .allowExperimentalOptions(true);
             
-            // Add basic utilities
-            poly.putMember("log", new java.util.function.Consumer<String>() {
-                @Override
-                public void accept(String message) {
-                    plugin.getLogger().info("[Eval] " + message);
-                }
-            });
-                
-            // Add sender reference if available
-            if (sender != null) {
-                poly.putMember("sender", sender);
+            // 3. Apply language-specific options
+            if ("js".equals(language)) {
+                builder.option("js.ecmascript-version", "2022");
+            } else if ("python".equals(language)) {
+                // These options will only be applied when Python support is added
+                builder.option("python.ForceImportSite", "true");
+                // Uncomment and set path if needed:
+                // builder.option("python.Executable", "/path/to/python");
+                builder.option("python.PosixModulePath", "");
+                builder.option("python.VirtualEnv", "");
             }
             
-            // Add server reference
-            poly.putMember("server", plugin.getServer());
+            // 4. Build the context
+            Context context = builder.build();
+                
+            // 5. Get access to the script's global variables
+            Value bindings = context.getBindings(language);
             
-            // Set the poly object in the context
-            context.getBindings(language).putMember("poly", poly);
+            // 6. Pass the ENTIRE PolyAPI as 'poly' variable
+            bindings.putMember("poly", plugin.getPolyAPI());
+            
+            // 7. Pass sender as a SEPARATE global variable 'sender'
+            if (sender != null) {
+                bindings.putMember("sender", sender);
+            }
+            
+            // 8. Pass 'server' for convenience
+            bindings.putMember("server", plugin.getServer());
             
             return context;
+                
         } catch (Exception e) {
-            // Ensure context is closed if there's an error during setup
-            if (context != null) {
-                try {
-                    context.close();
-                } catch (Exception closeEx) {
-                    // Ignore close exception
-                }
-            }
-            throw e;
+            plugin.getLogger().log(java.util.logging.Level.SEVERE, 
+                "Failed to create context for language: " + language, e);
+            throw new RuntimeException("Failed to create eval context", e);
         }
     }
     

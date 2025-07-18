@@ -20,7 +20,6 @@ com\polycraft\engine\scripting\ScriptManager.class
 com\polycraft\engine\scripting\ScriptLoader.class
 com\polycraft\engine\scripting\ScriptMetadata$Builder.class
 com\polycraft\engine\scheduler\ScriptScheduler.class
-com\polycraft\engine\scripting\ScriptEvaluator$1.class
 com\polycraft\engine\scripting\ScriptExecutor.class
 com\polycraft\engine\scheduler\ScriptScheduler$TaskScheduler.class
 com\polycraft\engine\listeners\EventManager.class
