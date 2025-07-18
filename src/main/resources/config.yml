@@ -1,0 +1,62 @@
+# PolyCraft Engine Configuration
+
+# Enable debug messages in the console
+debug: false
+
+# Automatically check for updates on startup
+auto-update: true
+
+# Default language for scripts if not specified in their metadata
+language: javascript
+
+# Script security settings
+security:
+  # Enable/disable script sandboxing
+  sandbox: true
+  
+  # Maximum execution time per script in milliseconds (0 for unlimited)
+  max-execution-time: 5000
+  
+  # Maximum memory usage per script in MB (0 for unlimited)
+  max-memory: 128
+
+# Script settings
+scripts:
+  # Default script directory (relative to the plugin folder)
+  directory: scripts
+  
+  # Auto-reload scripts when they are modified
+  auto-reload: true
+  
+  # Default script extension if not specified
+  default-extension: js
+
+# Logging settings
+logging:
+  # Log script execution times
+  log-execution-times: true
+  
+  # Log script errors to a separate file
+  log-errors: true
+  
+  # Log script output to console
+  log-to-console: true
+
+# API settings
+api:
+  # Enable/disable the REST API
+  enabled: false
+  
+  # REST API port
+  port: 8080
+  
+  # Authentication token (leave empty to disable)
+  auth-token: ""
+
+# Performance settings
+performance:
+  # Enable script execution metrics collection
+  enable-metrics: true
+  
+  # Maximum number of script instances to keep in cache
+  script-cache-size: 100
