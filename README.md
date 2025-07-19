@@ -20,14 +20,14 @@
 ## 🌟 About / О проекте
 
 **English**:
-PolyCraft Engine is a high-performance scripting platform that transforms your Minecraft server into a powerful development environment. Create plugins in JavaScript, Python, or C# without server restarts. Built on GraalVM for maximum performance and compatibility.
+PolyCraft Engine is a high-performance scripting platform that transforms your Minecraft server into a powerful development environment. Create plugins in JavaScript without server restarts. Built on GraalVM for maximum performance and compatibility.
 
 **Русский**:
-PolyCraft Engine — это высокопроизводительная платформа для выполнения скриптов, которая превращает ваш Minecraft-сервер в мощную среду разработки. Создавайте плагины на JavaScriptбез необходимости перезапуска сервера. Построена на GraalVM для максимальной производительности и совместимости.
+PolyCraft Engine — это высокопроизводительная платформа для выполнения скриптов, которая превращает ваш Minecraft-сервер в мощную среду разработки. Создавайте плагины на JavaScript без необходимости перезапуска сервера. Построена на GraalVM для максимальной производительности и совместимости.
 
 ## 🚀 Features / Возможности
 
-- **Multi-language Support / Поддержка нескольких языков**: JavaScript, Python, C# via GraalVM
+- **Language Support / Поддержка языков**: JavaScript
 - **Hot Reload / Горячая перезагрузка**: Changes apply instantly / Изменения применяются мгновенно
 - **Enhanced Security / Безопасность**: Isolated execution environment / Изолированная среда выполнения
 - **High Performance / Высокая производительность**: Optimized for modern hardware / Оптимизирована для современного железа
@@ -37,7 +37,7 @@ PolyCraft Engine — это высокопроизводительная пла�
 ## 📦 Requirements / Требования
 
 - Java 17 or higher / Java 17 или выше
-- Paper/Spigot 1.20.4+
+- Paper/Spigot 1.20.4+ (Tested on 1.20.4, may work on other versions) / (Протестировано на 1.20.4, может работать на других версиях)
 - 2GB+ RAM (4GB+ recommended for complex scripts) / 2 ГБ+ ОЗУ (4+ ГБ рекомендуется для сложных скриптов)
 
 ## 🚀 Installation / Установка
@@ -60,7 +60,7 @@ PolyCraft Engine — это высокопроизводительная пла�
 plugins/
 └── PolyCraft/
     ├── config.yml       # Main config / Основной конфиг
-    ├── scripts/         # Scripts (.js, .py, .cs) / Скрипты
+    ├── scripts/         # Scripts (.js) / Скрипты
     ├── lib/             # External libraries / Внешние библиотеки
     └── data/            # Script data / Данные скриптов
 ```
@@ -73,7 +73,7 @@ plugins/
 | `/pc reload <script>` | Reload a script / Перезагрузить скрипт |
 | `/pc enable <script>` | Enable a script / Включить скрипт |
 | `/pc disable <script>` | Disable a script / Выключить скрипт |
-| `/pc eval <lang> <code>` | Execute code directly / Выполнить код напрямую |
+| `/pc eval <code>` | Execute JavaScript code directly / Выполнить JavaScript код напрямую |
 | `/pc help` | Show help / Показать справку |
 
 ## 📚 Documentation / Документация
@@ -107,21 +107,6 @@ poly.on("player.PlayerJoinEvent", (event) => {
     const player = event.getPlayer();
     player.sendMessage("Welcome to the server!");
 });
-```
-
-### Python Example / Пример на Python
-
-```python
-def on_enable():
-    poly.log("Python script loaded!")
-    
-    @poly.command("test")
-    def test_cmd(sender, args):
-        sender.sendMessage(f"Test command from {sender.getName()}")
-        return True
-
-def on_disable():
-    poly.log("Script unloaded")
 ```
 
 ## 🔒 Security / Безопасность
